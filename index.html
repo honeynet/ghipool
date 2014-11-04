@@ -1,1 +1,25 @@
-This is a test
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <script src="static/js/angular.min.js"></script>
+    <script src="static/js/ng-table.js"></script>
+    
+    <link rel="stylesheet" href="static/css/ng-table.css" />
+    <link rel="stylesheet" href="static/css/bootstrap.min.css" />
+    
+    <link rel="stylesheet" href="static/css/style.css" />
+    <script src="static/js/script.js"></script>
+  </head>
+
+<body ng-app="main" ng-controller="DemoCtrl">
+
+    <table ng-table class="table">
+    <tr ng-repeat="user in users">
+        <td data-title="'Name'">{{ user.title }}</td>
+        <td data-title="'Age'">{{ user.body }}</td>
+    </tr>
+    </table>
+
+</body>
+</html>
