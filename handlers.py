@@ -78,6 +78,4 @@ class IssuesHandler(BaseHandler):
                 headers={'Accept': 'application/json'}
             )
             data = yield from resp.json()
-        from pprint import pprint
-        pprint(data)
         self.write(json_encode(data))
