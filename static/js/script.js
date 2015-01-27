@@ -1,12 +1,10 @@
-var app = angular.module('main', ['ngTable']).
+var ractive = new Ractive({
+  debug: true,
+  el: 'container',
+  template: '#template',
+  data: { issues: [{}] }
+});
 
-controller('DemoCtrl', function($scope, $http) {
-
-    $http.get('/issues').
-        success(function(data, status, headers, config) {
-            $scope.users = data;
-        }).
-        error(function(data, status, headers, config) {
-            console.log(status);
-        });
+$.getJSON('/issues', function(data) {
+    ractive.set('issues', data);
 });
