@@ -1,81 +1,91 @@
 #!/usr/bin/python3
 
-from urllib.parse import urlencode
+import json
+import os
 
+import asyncio
 import aiohttp
-import tornado.web
-from tornado.escape import json_encode
-
-from utils import coroutine
+from aiohttp import web
 
 
-class BaseHandler(tornado.web.RequestHandler):
-    def __init__(self, *args):
-        super(BaseHandler, self).__init__(*args)
-        print(self.request.path)
+class BaseHandler(object):
+    def __init__(self, loop):
+        self.loop = loop
+        self.projects = dict(
+            glastopf=['glastopf', 'conpot'],
+            honeynet=['beeswarm', 'apkinspector']
+        )
+        self.session = aiohttp.TCPConnector()
 
 
-class MainHandler(BaseHandler):
-    def get(self):
-        with open('index.html', 'rb') as fh:
-            self.write(fh.read())
-
-
-class AckHandler(BaseHandler):
-    @coroutine
-    def get(self):
-        code = self.get_argument('code', None)
-        state = self.get_argument('state', None)
-        resp = yield from aiohttp.request(
-            'POST',
-            'https://github.com/login/oauth/access_token',
-            params={
-                'client_id': self.application.gh_client_id,
-                'client_secret': self.application.gh_client_secret,
-                'code': code
-            },
+    @asyncio.coroutine
+    def _request_api(self, what, owner, repo, path, callback=lambda x: print(x)):
+        base_url = 'https://api.github.com/{0}/{1}/{2}{3}'
+        print(base_url.format(what, owner, repo, path))
+        r = yield from aiohttp.request(
+            'GET',
+            base_url.format(what, owner, repo, path),
+            connector=self.session,
             headers={'Accept': 'application/json'}
         )
-        data = yield from resp.json()
-        if state == self.application.gh_state:
-            issue_url = '/issues?' + urlencode({'token': data['access_token']})
-            self.redirect(issue_url)
+        print(r.status)
+        content = yield from r.json()
+        return content
 
 
-class SynHandler(BaseHandler):
-    def get(self):
-        params = {
-            'client_id': self.application.gh_client_id,
-            'state': self.application.gh_state
-        }
-        url = 'https://github.com/login/oauth/' + 'authorize?' + urlencode(params)
-        self.redirect(url)
+class IndexHandler(BaseHandler):
+    def handle_index(self, request):
+        with open('index.html', 'rb') as fh:
+            return web.Response(body=fh.read())
 
 
-class IssuesHandler(BaseHandler):
-    @coroutine
-    def get(self):
+class StaticHandler(BaseHandler):
+    def handle_static(self, request):
+        folder = request.match_info.get('folder', 'None')
+        file_name = request.match_info.get('file_name', 'None')
+        if folder in os.listdir('static'):
+            if file_name in os.listdir(os.path.join('static', folder)):
+                with open(os.path.join('static', folder, file_name), 'rb') as fh:
+                    return web.Response(body=fh.read())
+
+
+class ProjectsDataHandler(BaseHandler):
+
+    @asyncio.coroutine
+    def handle_projects_data(self, request):
+        # /repos/:owner/:repo/issues
+        data = dict()
+        for owner, projects in self.projects.items():
+            data[owner] = dict()
+            ret = yield from self._request_api('orgs', owner, 'repos', '')
+            for project in ret:
+                if project['name'] in projects:
+                    data[owner][project['name']] = project
+        return web.Response(body=json.dumps(data).encode('utf-8'))
+
+
+class ProjectHandler(BaseHandler):
+
+    @asyncio.coroutine
+    def handle_projects(self, request):
+        # /repos/:owner/:repo/stats/code_frequency
         data = []
-        token = self.get_argument('token', None)
-        if token:
-            resp = yield from aiohttp.request(
-                'GET',
-                'https://api.github.com/repos/glastopf/conpot/issues',
-                params={
-                    'access_token': token
-                },
-                headers={'Accept': 'application/json'}
-            )
-            data = yield from resp.json()
-        else:
-            resp = yield from aiohttp.request(
-                'GET',
-                'https://api.github.com/repos/glastopf/conpot/issues',
-                params={
-                    'client_id': self.application.gh_client_id,
-                    'client_secret': self.application.gh_client_secret
-                },
-                headers={'Accept': 'application/json'}
-            )
-            data = yield from resp.json()
-        self.write(json_encode(data))
+        for owner, projects in self.projects.items():
+            for project in projects:
+                ret = yield from self._request_api('repos', owner, project, '/stats/code_frequency')
+                additions = 0
+                deletions = 0
+                if len(ret) >= 4:
+                    for week in ret[-4:]:
+                        additions += week[1]
+                        deletions += week[2]
+                else:
+                    additions = 'n/a'
+                    deletions = 'n/a'
+                data.append(dict(
+                    owner=owner,
+                    project=project,
+                    additions_last_month=additions,
+                    deletions_last_month=deletions
+                ))
+        return web.Response(body=json.dumps(data).encode('utf-8'))
