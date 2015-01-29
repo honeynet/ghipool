@@ -1,0 +1,30 @@
+<div class="row">
+    <table class="table table-striped table-condensed">
+      <tbody>
+          <tr>
+              <th class="col-md-1">Owner</th>
+              <th class="col-md-1">Project</th>
+              <th>Code Additions</th>
+              <th>Code Deletions</th>
+              <th>Description</th>
+              <th>Open Issues</th>
+              <th>Forks</th>
+              <th>Link</th>
+          </tr>
+          {{#each projects}}
+          <tr>
+              <td><b>{{owner}}</b></td>
+              <td>{{project}}</td>
+              <td><span style="color: green">{{additions_last_month}}</span></td>
+              <td><span style="color: red">{{deletions_last_month}}</span></td>
+              {{#with projects_data[owner][project]}}
+              <td>{{description}}</td>
+              <td><a href="https://github.com/{{owner}}/{{project}}/issues">{{open_issues_count}}</a></td>
+              <td>{{forks_count}}</td>
+              <td><a href="{{html_url}}">{{full_name}}</a></td>
+              {{/with}}
+          </tr>
+          {{/each}}
+      </tbody>
+    </table>
+</div>
