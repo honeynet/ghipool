@@ -1,4 +1,4 @@
 ghipool
 =======
 
-GitHub Issue Pool
+GitHub Project Pool Overview
