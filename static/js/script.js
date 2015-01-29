@@ -1,10 +1,18 @@
-var ractive = new Ractive({
-  debug: true,
-  el: 'container',
-  template: '#template',
-  data: { issues: [{}] }
-});
+$.ajax('/static/templates/table.html').then(function(tableTemplate) {
+    var ractive = new Ractive({
+        debug: true,
+        el: 'container',
+        template: tableTemplate,
+        data: {
+            projects_data: {},
+            projects: {}
+        }
+    });
+    $.getJSON('/projects_data', function(data) {
+        ractive.set('projects_data', data);
+    });
 
-$.getJSON('/issues', function(data) {
-    ractive.set('issues', data);
+    $.getJSON('/projects', function(data) {
+        ractive.set('projects', data);
+    });
 });
