@@ -1,0 +1,9 @@
+#main {
+	margin: 0 auto;
+	max-width: 660px;
+	padding: 10px;
+	box-shadow: 0 0 300px #eee;
+}
+h1 {
+	padding-bottom: 20px;
+}
