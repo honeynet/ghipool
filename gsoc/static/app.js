@@ -10,9 +10,9 @@ class Feed extends React.Component {
 	componentWillMount() {
 		fetch(this.props.url).then(response => {
 			response.text().then(text => {
-				let p = new DOMParser();
-				let rss = p.parseFromString(text, "text/xml");
-				let entries = [].slice.call(rss.getElementsByTagName("entry"));
+				var p = new DOMParser();
+				var rss = p.parseFromString(text, "text/xml");
+				var entries = [].slice.call(rss.getElementsByTagName("entry"));
 				this.setState({entries});
 
 				//debug
@@ -21,7 +21,7 @@ class Feed extends React.Component {
 		});
 	}
 	render() {
-		let entries = this.state.entries;
+		var entries = this.state.entries;
 		entries = entries.filter(this.props.filter || (x => true));
 		entries = entries.map((entry, id) => <Entry key={id} data={entry}/>);
 		
@@ -37,8 +37,8 @@ class Feed extends React.Component {
 
 class Entry extends React.Component {
 	render(){
-		let content = this.props.data.getElementsByTagName("content")[0].textContent;
-		let html = {__html: content};
+		var content = this.props.data.getElementsByTagName("content")[0].textContent;
+		var html = {__html: content};
 
 		// Use class names matching the GitHub HTML
 		return (
@@ -52,14 +52,14 @@ class Entry extends React.Component {
 function authors(names){
 	names = names.split(" ");
 	return function(entry){
-		let author = entry.querySelector("author name").textContent;
+		var author = entry.querySelector("author name").textContent;
 		return names.indexOf(author) > -1;
 	}
 }
 
 
 //let filter = authors("Kriechi");
-let filter = false;
+var filter = false;
 React.render(
 	<Feed url="/feed" filter={filter} />,
 	document.getElementById("main")
